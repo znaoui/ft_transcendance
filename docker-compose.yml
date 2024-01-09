@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  app:
+    container_name: app
+    build: ./app
+    volumes:
+      - app:/app
+    ports:
+      - "8080:3001"
+    restart: always
+    networks:
+      - default
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL}
+      NODE_ENV: production
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: --auth=scram-sha-256
+      OAUTH_AUTHORIZE_URI: ${OAUTH_AUTHORIZE_URI}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_SECRET: ${OAUTH_SECRET}
+      OAUTH_CALLBACK_URI: ${OAUTH_CALLBACK_URI}
+      OAUTH_TOKEN_URI: ${OAUTH_TOKEN_URI}
+      OAUTH_USER_URI: ${OAUTH_USER_URI}
+      PASSWORD_SALT: ${PASSWORD_SALT}
+      SESSION_SECRET: ${SESSION_SECRET}
+      TZ: ${TZ}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    container_name: postgres
+    build: ./app/postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - default
+    volumes:
+      - db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: --auth=scram-sha-256
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+volumes:
+  app:
+  db:
+
+networks:
+  default:
